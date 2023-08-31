@@ -78,8 +78,11 @@ func NoteRepositoryContract(t *testing.T, subject NoteRepository) {
 		subject.Create(ctx, &note)  //letrahozzuk a korabban torolt jegyzetet
 		subject.Create(ctx, &note2) //letrehozunk egy masik jegyzetet is
 
-		gotNotes, err := subject.FindAll(ctx)        //megkeressuk az osszes letrehozott jegyzetunket es belerakjuk egy listaba
-		assert.NoError(t, err)                       //megnezzuk h hiba nelkul lefutott e a kereses
+		gotNotes, err := subject.FindAll(ctx) //megkeressuk az osszes letrehozott jegyzetunket es belerakjuk egy listaba
+		assert.NoError(t, err)                //megnezzuk h hiba nelkul lefutott e a kereses
+
+		//Lists are always ordered, but we don't want to expect that from our findAll method,
+		// so we have to check the length and the elements in our lists
 		assert.Equal(t, len(gotNotes), len(myNotes)) //megnezzuk h a megtalalt note-okbol allo lista hossza megegyezik e a 2 note-bol allo lista hosszaval
 		assert.ContainExactly(t, gotNotes, myNotes)  //megnezzuk h a myNotes lista osszes eleme megtalalhato-e a gotNotes listaban
 	})
