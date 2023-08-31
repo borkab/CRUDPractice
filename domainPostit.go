@@ -41,11 +41,6 @@ func NoteRepositoryContract(t *testing.T, subject NoteRepository) {
 			Body:  "thx for the fishes",
 		}
 
-		note2 := Note{
-			Title: "allways",
-			Body:  "take a towel with you",
-		}
-
 		ctx := context.Background()
 
 		assert.NoError(t, subject.Create(ctx, &note)) //megneztuk h hiba nelkul vegig futott-e a Create func
@@ -61,14 +56,32 @@ func NoteRepositoryContract(t *testing.T, subject NoteRepository) {
 		_, found, _ = subject.FindByID(ctx, note.ID) //megnezzuk h a note-unk Id-jat torles utan megtalalja e
 		assert.False(t, found, "we expect that found will be false after deleting our note")
 
+	})
+
+	t.Run("find all the existing notes", func(t *testing.T) {
+
+		note := Note{
+			Title: "dolphins",
+			Body:  "thx for the fishes",
+		}
+
+		note2 := Note{
+			Title: "allways",
+			Body:  "take a towel with you",
+		}
+
+		ctx := context.Background()
+
 		var myNotes []Note                     //csinalunk egy note-okbol allo listat
 		myNotes = append(myNotes, note, note2) //beletesszuk ebbe a listaba a 2 note-unkat
-		subject.Create(ctx, &note)             //letrahozzuk a korabban torolt jegyzetet
-		subject.Create(ctx, &note2)            //letrehozunk egy masik jegyzetet is
-		gotNotes, err := subject.FindAll(ctx)  //megkeressuk az osszes letrehozott jegyzetunket es belerakjuk egy listaba
-		assert.NoError(t, err)                 //megnezzuk h hiba nelkul lefutott e a kereses
-		assert.Equal(t, gotNotes, myNotes)     //megnezzuk h a megtalalt note-okbol allo lista megegyezik e a 2 note-bol allo listaval
 
+		subject.Create(ctx, &note)  //letrahozzuk a korabban torolt jegyzetet
+		subject.Create(ctx, &note2) //letrehozunk egy masik jegyzetet is
+
+		gotNotes, err := subject.FindAll(ctx)        //megkeressuk az osszes letrehozott jegyzetunket es belerakjuk egy listaba
+		assert.NoError(t, err)                       //megnezzuk h hiba nelkul lefutott e a kereses
+		assert.Equal(t, len(gotNotes), len(myNotes)) //megnezzuk h a megtalalt note-okbol allo lista hossza megegyezik e a 2 note-bol allo lista hosszaval
+		assert.ContainExactly(t, gotNotes, myNotes)  //megnezzuk h a myNotes lista osszes eleme megtalalhato-e a gotNotes listaban
 	})
 
 }
