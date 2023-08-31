@@ -1,13 +1,18 @@
 package postit
 
-import "context"
+import (
+	"context"
+	"testing"
+
+	"github.com/adamluzsi/testcase/assert"
+)
 
 // Note is the domain entity
 // belso kor
 type Note struct {
 	Title string
 	Body  string
-	ID    NoteID
+	ID    NoteID //az Id-t a repository birtokolja
 }
 
 type NoteID string
@@ -26,4 +31,44 @@ type NoteRepository interface { //role interface: https://www.martinfowler.com/b
 	//when you has a ptr of a Note here this would not be happen, and you can maybe get a nil ptr
 	FindByID(context.Context, NoteID) (Note, bool, error)
 	DeleteByID(context.Context, NoteID) error
+	FindAll(context.Context) ([]Note, error)
+}
+
+func NoteRepositoryContract(t *testing.T, subject NoteRepository) {
+	t.Run("the repo is not empty", func(t *testing.T) {
+		note := Note{
+			Title: "dolphins",
+			Body:  "thx for the fishes",
+		}
+
+		note2 := Note{
+			Title: "allways",
+			Body:  "take a towel with you",
+		}
+
+		ctx := context.Background()
+
+		assert.NoError(t, subject.Create(ctx, &note)) //megneztuk h hiba nelkul vegig futott-e a Create func
+		assert.NotEmpty(t, note.ID, "we expect that a successful create call supply an ID in the note value")
+
+		gotNote, found, err := subject.FindByID(ctx, note.ID)
+		assert.NoError(t, err) //megnezzuk h hiba nelkul vegigfutott e a find func
+		assert.True(t, found, "we expect to find the note using the ID that we created with the Create func")
+		assert.Equal(t, gotNote, note) //megnezzuk h a megtalalt note megegyezik-e a letrehozott note-al
+
+		err = subject.DeleteByID(ctx, note.ID)
+		assert.NoError(t, err)                       //megnezzuk h hiba nelkul vegig futott e a delete func
+		_, found, _ = subject.FindByID(ctx, note.ID) //megnezzuk h a note-unk Id-jat torles utan megtalalja e
+		assert.False(t, found, "we expect that found will be false after deleting our note")
+
+		var myNotes []Note                     //csinalunk egy note-okbol allo listat
+		myNotes = append(myNotes, note, note2) //beletesszuk ebbe a listaba a 2 note-unkat
+		subject.Create(ctx, &note)             //letrahozzuk a korabban torolt jegyzetet
+		subject.Create(ctx, &note2)            //letrehozunk egy masik jegyzetet is
+		gotNotes, err := subject.FindAll(ctx)  //megkeressuk az osszes letrehozott jegyzetunket es belerakjuk egy listaba
+		assert.NoError(t, err)                 //megnezzuk h hiba nelkul lefutott e a kereses
+		assert.Equal(t, gotNotes, myNotes)     //megnezzuk h a megtalalt note-okbol allo lista megegyezik e a 2 note-bol allo listaval
+
+	})
+
 }
